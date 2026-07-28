@@ -14,22 +14,105 @@ console.log("Aliexpress bypass script is running");
 browser.webRequest.onBeforeRequest.addListener(
     async function (details) {
         console.log("Request intercepted:", details.url);
+        const ruleSelector = ".card-dsa-wrapper img";
+        const styleRule = "filter: none !important; -webkit-filter: none !important;";
 
-        await browser.scripting.executeScript({
-        target: {
-            tabId: details.tabId,
-        },
-        func: () => {
-            console.log("INIT")
-            // If the element is already there, just remove it
-            document.querySelectorAll(".ls_ke, .k8_ky, .ho_g9, img[src='https://ae-pic-a1.aliexpress-media.com/kf/S082ae95bce89462b9548a1d53f222ab4p/72x72.png'], .J_SAFETY_FILER_MODAL, ._1FlkA").forEach(elt=>elt.style.display = "none")
-            document.querySelectorAll(".card-dsa-wrapper .nh_be").forEach(elt=>elt.classList.remove("nh_be"))
-            document.querySelectorAll(".card-dsa-wrapper").forEach(elt=>elt.classList.remove("card-dsa-wrapper"))
-            document.querySelectorAll(".dsa--visible--wrapper").forEach(elt=>elt.classList.remove("dsa--visible--wrapper"))
-        }})
+        const detection = await browser.scripting.executeScript({
+            target: {
+                tabId: details.tabId,
+            },
+            func: () => {
+                console.log("INIT")
+                // Check existing stylesheets
+                for (const sheet of document.styleSheets) {
+                    try {
+                        for (const rule of sheet.cssRules) {
+                            if (
+                                rule.selectorText === ruleSelector &&
+                                rule.style &&
+                                rule.style.filter === "none" &&
+                                rule.style.webkitFilter === "none"
+                            ) {
+                                return true;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore inaccessible cross-origin stylesheets
+                        continue;
+                    }
+
+                    if (found) break;
+                }
+
+                return false;
+            }
+        });
+
+        const found = detection[0].result;
+
+
+
+        // Add rule if not found
+        if (!found) {
+            browser.scripting.executeScript({
+                target: {
+                    tabId: details.tabId,
+                },
+                func: (ruleSelector, styleRule) => {
+                    const style = document.createElement("style");
+                    style.textContent = `
+                    .card-dsa-wrapper img {
+                       filter: none !important; -webkit-filter: none !important;
+                    }
+                    .dsa--visible--wrapper img {
+                       filter: none !important; -webkit-filter: none !important;
+                    }
+                    `;
+                    document.head.appendChild(style);
+                }
+            });
+
+        }
+
+
+
+        browser.scripting.executeScript({
+            target: {
+                tabId: details.tabId,
+            },
+            func: () => {
+                console.log("Running Aliexpress bypass script on the page");
+                // Popup on the product page
+                document.querySelectorAll(".J_SAFETY_FILER_MODAL").forEach(elt => elt.style.display = "none")
+
+                document.querySelectorAll(".card-dsa-wrapper").forEach(elt => elt.classList.remove("card-dsa-wrapper"))
+
+                // Crossed eye icon in search results
+                document.querySelectorAll("img[src='https://ae-pic-a1.aliexpress-media.com/kf/S082ae95bce89462b9548a1d53f222ab4p/72x72.png']").forEach(elt => elt.style.display = "none")
+
+                // Blur on search results mobile
+                document.querySelectorAll("div[data-anc='body']>div>div>div>div>div>div, div[data-spm='platformRecommendH5']>div>div>div").forEach(elt=>elt.style.display="none")
+
+                // Remove the overlay over the products that opens the popup
+                if (document.querySelector("#card-list") || document.querySelector(".slick-track")) {
+                    for (const item of document.querySelector("#card-list").children || document.querySelector(".slick-track").children) {
+                        const wrapper = item.querySelector(":scope > div");
+                        if (!wrapper) continue;
+
+                        const divs = wrapper.querySelectorAll(":scope > div");
+                        if (divs.length === 2) {
+                            divs[1].style.display = "none";
+                        }
+                    }
+                }
+            }
+        })
+
+
 
 
     },
-    { urls: ["https://aplus.aliexpress.com/Product.Exposure.Event*","https://assets.aliexpress-media.com/g/AWSC/fireyejs/*/fireyejs.js"] },
+    { urls: ["https://aplus.aliexpress.com/Product.Exposure.Event*", "https://assets.aliexpress-media.com/g/AWSC/fireyejs/*/fireyejs.js"] },
     []
 )

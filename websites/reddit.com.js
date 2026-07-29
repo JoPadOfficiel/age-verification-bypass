@@ -18,7 +18,8 @@ browser.webRequest.onBeforeRequest.addListener(
                 tabId: details.tabId,
             },
             func: () => {
-                const blockedId = "configured-xpromo-blocking_xpromo_nsfw_blocking_desktop"; //Subreddit popup
+                const nsfwSubredditPopup = "configured-xpromo-blocking_xpromo_nsfw_blocking_desktop"; //Subreddit popup
+                const loginUpsell = "desktop-dynamic-upsell-dialog"; //Login popup
                 const promptContainerTagName = "xpromo-nsfw-blocking-container" //Standalone post popup
 
                 // Check if the popup gets added to the page
@@ -29,7 +30,7 @@ browser.webRequest.onBeforeRequest.addListener(
 
                             // Check the node itself
 
-                            if (node.id === blockedId) {
+                            if (node.id === nsfwSubredditPopup || node.id === loginUpsell) {
                                 node.remove();
                                 continue;
                             }
@@ -42,7 +43,7 @@ browser.webRequest.onBeforeRequest.addListener(
 
 
                             // Check descendants
-                            const target = node.querySelector?.(`#${CSS.escape(blockedId)}`);
+                            const target = node.querySelector?.(`#${CSS.escape(nsfwSubredditPopup)}`);
                             if (target) {
                                 target.remove();
                             }
@@ -61,8 +62,8 @@ browser.webRequest.onBeforeRequest.addListener(
                 });
 
                 // If the element is already there, just remove it
-                if (document.getElementById(blockedId)) {
-                    document.getElementById(blockedId).remove()
+                if (document.getElementById(nsfwSubredditPopup)) {
+                    document.getElementById(nsfwSubredditPopup).remove()
                 }
                 if (document.querySelector(promptContainerTagName)) {
                     document.querySelector(promptContainerTagName).shadowRoot.querySelector(".prompt").remove()
